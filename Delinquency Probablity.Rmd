@@ -1,0 +1,279 @@
+---
+title: "Project"
+author: "Farheen"
+date: "12/12/2020"
+output:
+  pdf_document: default
+  html_document: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```
+install.packages("caret")
+library(plyr)
+library(e1071)
+library(corrplot)
+library(ggplot2)
+library(randomForest)
+```
+
+
+Import CSV file
+
+```{r}
+taiwan = read.csv("C:/Users/PC/Desktop/Project/UCI_Credit_Card.csv")
+```
+
+Checking the Data tyoe of variables:
+
+```{r}
+str(taiwan)
+```
+Missing values in our data(No missing values)
+
+```{r}
+library(naniar)
+vis_miss(taiwan)
+
+```
+Renaming the variables 
+```{r}
+colnames(taiwan)[colnames(taiwan) == "SEX"] = "GENDER"
+colnames(taiwan)[colnames(taiwan) == "MARRIAGE"] = "MARITAL_STATUS"
+colnames(taiwan)[colnames(taiwan) == "EDUCATION"] = "QUALIFICATION"
+colnames(taiwan)[colnames(taiwan) == "default.payment.next.month"] = "DEFAULT"
+taiwan$DEFAULT = as.numeric(taiwan$DEFAULT)
+```
+
+Correlation plot
+
+```{r}
+library(ggplot2)
+library(corrplot)
+vis_1 = cor(taiwan[-c(3, 4, 5)])
+corrplot(vis_1, method = "circle")
+```
+
+```{r}
+print("Default")
+table(taiwan$DEFAULT)
+print("Gender")
+table(taiwan$GENDER)
+print("Qualification")
+table(taiwan$QUALIFICATION)
+print("Marital Status")
+table(taiwan$MARITAL_STATUS)
+```
+```{r}
+taiwan$GENDER_1 = ifelse(taiwan$GENDER == 1, "Male", "Female")
+taiwan$QUALIFICATION = ifelse(taiwan$QUALIFICATION == 0 |taiwan$QUALIFICATION == 5 | taiwan$QUALIFICATION == 6,
+       4, taiwan$QUALIFICATION)
+summary(taiwan$QUALIFICATION)
+taiwan$DEFAULT = as.factor(taiwan$DEFAULT)
+taiwan$MARITAL_STATUS = ifelse(taiwan$MARITAL_STATUS == 3, 0, taiwan$MARITAL_STATUS)
+table(taiwan$MARITAL_STATUS)
+```
+Marriage Vs Default
+```{r}
+table(taiwan$MARITAL_STATUS)
+taiwan$MARITAL_STATUS = as.factor(taiwan$MARITAL_STATUS)
+ggplot(data = taiwan, mapping = aes(x = MARITAL_STATUS, fill = DEFAULT)) +
+  geom_bar() +
+  xlab("Marital status") +
+  ggtitle(" MARITAL STATUS VS DEFAULT") +
+  stat_count(aes(label = ..count..), geom = "label")
+
+```
+
+```{r}
+taiwan$QUALIFICATION = ifelse(taiwan$QUALIFICATION == 0 |taiwan$QUALIFICATION == 5 | taiwan$QUALIFICATION == 6,
+       4, taiwan$QUALIFICATION)
+taiwan$QUALIFICATION = as.factor(taiwan$QUALIFICATION)
+ggplot(data = taiwan, mapping = aes(x = QUALIFICATION, fill = DEFAULT)) +
+  geom_bar() +
+  ggtitle("EDUCATION vs DEFAULT") +
+  stat_count(aes(label = ..count..), geom = "label")
+```
+Data after removing outliers and ID row
+```{r}
+taiwan2 = read.csv("C:/Users/PC/Desktop/FinalData.csv")
+```
+
+```{r}
+colnames(taiwan2)[colnames(taiwan2) == "SEX"] = "GENDER"
+colnames(taiwan2)[colnames(taiwan2) == "MARRIAGE"] = "MARITAL_STATUS"
+colnames(taiwan2)[colnames(taiwan2) == "EDUCATION"] = "QUALIFICATION"
+
+colnames(taiwan2)[colnames(taiwan2) == "PAY_0"] = "PAY_1"
+```
+
+```{r}
+taiwan2$MARITAL_STATUS = ifelse(taiwan2$MARITAL_STATUS == 1, 0, taiwan2$MARITAL_STATUS)
+taiwan2$QUALIFICATION = ifelse(taiwan2$QUALIFICATION == 0 |taiwan2$QUALIFICATION == 5 | taiwan2$QUALIFICATION == 6,
+       4, taiwan2$QUALIFICATION)
+taiwan2$DEFAULT = as.factor(taiwan2$DEFAULT)
+taiwan2$GENDER = as.factor(taiwan2$GENDER)
+taiwan2$MARITAL_STATUS = as.factor(taiwan2$MARITAL_STATUS)
+taiwan2$QUALIFICATION = as.factor(taiwan2$QUALIFICATION)
+taiwan2$PAY_1 = as.factor(taiwan2$PAY_1)
+taiwan2$PAY_2 = as.factor(taiwan2$PAY_2)
+taiwan2$PAY_3 = as.factor(taiwan2$PAY_3)
+taiwan2$PAY_4 = as.factor(taiwan2$PAY_4)
+taiwan2$PAY_5 = as.factor(taiwan2$PAY_5)
+taiwan2$PAY_6 = as.factor(taiwan2$PAY_6)
+```
+
+```{r}
+summary(taiwan2)
+```
+
+```{r}
+str(taiwan2)
+```
+
+```{r}
+str(taiwan2)
+```
+
+```{r}
+library(imbalance)
+head(taiwan2, 10)
+
+
+```
+
+```{r}
+table(taiwan2$DEFAULT)
+```
+Smote
+```{r}
+library(imbalance)
+```
+
+```{r}
+
+newtaiwan <- mwmote(taiwan2, numInstances = 10000, classAttr="DEFAULT")
+
+```
+
+```{r}
+summary(newtaiwan)
+```
+
+```{r}
+newData <- rbind(taiwan2, newtaiwan)
+```
+
+
+```{r}
+set.seed(7)
+rows <- sample(nrow(newData))
+newDataShuffled <- newData[rows, ]
+
+newDataShuffled$DEFAULT <- factor(newDataShuffled$DEFAULT)
+```
+
+```{r}
+table(newDataShuffled$DEFAULT)
+```
+
+
+
+plot correlation for balanced data
+
+```{r}
+newDataShuffled$PAY_1 = as.numeric(newDataShuffled$PAY_1)
+newDataShuffled$PAY_2 = as.numeric(newDataShuffled$PAY_2)
+newDataShuffled$PAY_3 = as.numeric(newDataShuffled$PAY_3)
+newDataShuffled$PAY_4 = as.numeric(newDataShuffled$PAY_4)
+newDataShuffled$PAY_5 = as.numeric(newDataShuffled$PAY_5)
+newDataShuffled$PAY_6 = as.integer(newDataShuffled$PAY_6)
+newDataShuffled$DEFAULT = as.integer(newDataShuffled$DEFAULT)
+library(ggplot2)
+library(corrplot)
+vis_1 = cor(newDataShuffled[-c(2, 3, 4)])
+corrplot(vis_1, method = "circle")
+```
+
+Changing back to factor
+
+```{r}
+newDataShuffled$GENDER = as.integer(newDataShuffled$GENDER)
+newDataShuffled$QUALIFICATION = as.integer(newDataShuffled$QUALIFICATION)
+newDataShuffled$MARITAL_STATUS = as.integer(newDataShuffled$MARITAL_STATUS)
+
+newDataShuffled$PAY_1 = as.numeric(newDataShuffled$PAY_1)
+newDataShuffled$PAY_2 = as.numeric(newDataShuffled$PAY_2)
+newDataShuffled$PAY_3 = as.numeric(newDataShuffled$PAY_3)
+newDataShuffled$PAY_4 = as.numeric(newDataShuffled$PAY_4)
+newDataShuffled$PAY_5 = as.numeric(newDataShuffled$PAY_5)
+newDataShuffled$PAY_6 = as.integer(newDataShuffled$PAY_6)
+newDataShuffled$DEFAULT = as.numeric(newDataShuffled$DEFAULT)
+```
+
+
+
+```{r}
+def <- newData$DEFAULT
+cbind(frequency=table(def), percentage= prop.table(table(def))*100)
+```
+
+```{r}
+set.seed(5)
+ 
+index_set <- sample(1:nrow(newDataShuffled), 0.5*nrow(newDataShuffled))
+train_Set <- newDataShuffled[index_set,]
+test_set <- newDataShuffled[-index_set,]
+ 
+```
+
+```{r}
+summary(train_Set)
+summary(test_set)
+
+```
+
+```{r}
+library(caret)
+trainctrl <- trainControl(method="cv", number=6, classProbs = TRUE, 
+                             summaryFunction=twoClassSummary, savePredictions = TRUE)
+
+
+```
+
+```{r}
+train_Set$DEFAULT = as.factor(train_Set$DEFAULT)
+test_set$DEFAULT = as.factor(test_set$DEFAULT)
+library(randomForest)
+model1 = randomForest(as.factor(DEFAULT) ~ ., data = train_Set, ntree = 500, mtry=2, importance = TRUE)
+
+```
+
+
+
+```{r}
+
+rf_prediction <- predict(model1, newdata = test_set)
+confusionMatrix(rf_prediction, test_set$DEFAULT)
+
+```
+Applying Decision Tree
+
+
+```{r}
+library(rpart)
+library(rpart.plot)
+fit <- rpart(DEFAULT~., data = train_Set, method = 'class')
+rpart.plot(fit, extra = 106)
+```
+```{r}
+
+predict_unseen <-predict(fit, test_set, type = 'class')
+confusionMatrix(predict_unseen, test_set$DEFAULT)
+```
+
+```{r}
+
+```
